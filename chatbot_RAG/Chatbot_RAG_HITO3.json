@@ -1,0 +1,609 @@
+{
+  "name": "RAG_HITO3",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        -112
+      ],
+      "id": "f2569694-2bb6-4fb0-b041-29f03a16e369",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "azsr0KXMSlsoQLaa",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        -112
+      ],
+      "id": "e1f42373-7f73-4e86-942c-e0202dbc11b2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1QEQgn5IadqxLbviT-W_so4NZZtiY63Mx",
+          "mode": "list",
+          "cachedResultName": "RAG",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1QEQgn5IadqxLbviT-W_so4NZZtiY63Mx"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -112
+      ],
+      "id": "01bd2ad1-161b-4bb3-af99-cdfe4bfaca8a",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "azsr0KXMSlsoQLaa",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "=rag",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -112
+      ],
+      "id": "cba17ff0-16ad-48ea-a3c3-7f4e6d99f717",
+      "name": "Qdrant Vector Store2",
+      "credentials": {
+        "qdrantApi": {
+          "id": "NOlMahrUSmXWzFg7",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.data }}",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        16
+      ],
+      "id": "01ec4bd5-df18-485e-b569-6ee66a2abb72",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        384,
+        160
+      ],
+      "id": "28bc789a-d990-4080-9571-a021425cd974",
+      "name": "Recursive Character Text Splitter1"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "documentos",
+          "mode": "list",
+          "cachedResultName": "documentos"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $('Download file').item.json.originalFilename }}",
+            "fecha": "={{ $now.toSQL() }}\n",
+            "num_chunks": "={{ $json.count_metadata }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "num_chunks",
+              "displayName": "num_chunks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        928,
+        -112
+      ],
+      "id": "ae14a33e-1573-40d3-937e-2182ac8f34fd",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "NyDtBowUQgrRvHjw",
+          "name": "Postgres_Rag_Hito3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "metadata"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        -112
+      ],
+      "id": "5c0f6bb3-7173-4ac6-9d05-67bec065309f",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "content": "## Descarga de datos\n-Se ponen datos txt en una carpeta de drive \n-Se detecta, de descarga y se extrae el texto\n-Se separa por chunks (500 tockens y 100 de overlap)\n-Se guarda en qdrant en una coleción llamada \"rag\"\n-Para medir los chunks contamos los items que nos llegan desde su                                      modulo (qdrant) y cogemos dicha info para crear una row en la tabla ",
+        "height": 176,
+        "width": 1008
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        288,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "d1335e3f-7982-4f8b-8725-de7e31c499d7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ]
+      },
+      "type": "n8n-nodes-telegram-polling.telegramPollingTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        384
+      ],
+      "id": "11b5186a-bb78-435e-8233-1b9533f2c284",
+      "name": "Telegram Trigger",
+      "credentials": {
+        "telegramApi": {
+          "id": "82IQp3j4IFdwgHgW",
+          "name": "TelegramRagBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"chat_id\": \"{{ $json.message.chat.id }}\",\n  \"username\": \"{{$json.message.chat.first_name || 'sin_username'}}\",\n  \"mensaje\": \"{{$json.message.text || ''}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        384
+      ],
+      "id": "dbf8aeb4-96e8-473d-80b9-c6d83e5eff7b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        32,
+        176
+      ],
+      "id": "b08c5a5d-a0c5-4831-84e2-7fa4e04f0f15",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i1Mw6ZlfOkI6GHPS",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Busca en la base de datos de documentos para responder preguntas sobre  {{ $json.mensaje }}",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "rag",
+          "mode": "list",
+          "cachedResultName": "rag"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        608
+      ],
+      "id": "43654e6e-280c-4a2d-a82a-f8d22c1af201",
+      "name": "Qdrant data",
+      "credentials": {
+        "qdrantApi": {
+          "id": "NOlMahrUSmXWzFg7",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\nmensaje: {{ $json.mensaje }} , chat_id: {{ $json.chat_id }}, username:{{ $json.username }}\n",
+        "options": {
+          "systemMessage": "=\nEres un asistente que responde preguntas utilizando EXCLUSIVAMENTE información procedente de documentos que han sido vectorizados (PDF o TXT) y almacenados en una base vectorial (Qdrant).\nTu conocimiento se limita únicamente al contenido recuperado mediante RAG desde esos documentos.\nNo debes usar conocimiento externo, suposiciones ni información que no esté presente en el contexto recuperado.\nDebes responder de forma clara y directa basándote solo en el contexto proporcionado.\nReglas:\n1. Usa únicamente la información presente en el CONTEXTO recuperado del RAG.\n2. No inventes información ni completes con conocimiento externo.\n3. Recorta la información obtenida si no es necesaria para dar una respuesta directa.\n4. Si qdrant no contiene la respuesta, indícalo claramente sin mencionar qdrant, di algo como \"no dispongo de la informacion necesaria para responder a su mensaje: {{ $json.mensaje }}\".\n5. No hagas suposiciones si los datos no aparecen en el contexto.\n6. Prioriza respuestas breves y precisas basadas en los documentos.\nPREGUNTA:\n{{ $json.mensaje }}",
+          "enableStreaming": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        144,
+        384
+      ],
+      "id": "7f982b76-9f3c-4e9d-9d5c-58bc864e23da",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:7b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        144,
+        544
+      ],
+      "id": "d41cf7b8-73d6-4f04-9eee-9bf788f95a73",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i1Mw6ZlfOkI6GHPS",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        384
+      ],
+      "id": "6f8524da-c266-4db9-9da2-e744a2f1dda0",
+      "name": "Send a text message",
+      "webhookId": "f39d20aa-00c9-4a46-bd82-f7cc962d8086",
+      "credentials": {
+        "telegramApi": {
+          "id": "82IQp3j4IFdwgHgW",
+          "name": "TelegramRagBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Fase de Consulta (Chatbot de Telegram)\n*   **Trigger:** Recepción de mensajes en tiempo real mediante **Telegram Trigger**.\n*   **Agente de IA (AI Agent):**\n    *   **Cerebro:** Modelo `qwen2.5:7b-instruct` (Ollama).\n    *   **Herramienta de Búsqueda:** Nodo `Qdrant data` configurado como herramienta para recuperar contexto de la base vectorial.\n    *   **Memoria de Sesión:** Nodo `Simple Memory` asociado al `chat_id` para recordar las últimas **5 interacciones**.\n*   **Post-procesamiento:**\n    *   **JavaScript:** Normalización de la salida y clasificación automática de la consulta (Categoría, Prioridad, Estado y Resumen).\n*   **Respuesta:** Envío del mensaje final al usuario a través de Telegram.\n---\n##  Reglas Críticas del Agente\n1.  **Exclusividad de Datos:** Responde únicamente utilizando la información recuperada de **Qdrant**.\n2.  **No Alucinación:** Si la información no está en los documentos, el agente indica: *\"No dispongo de la información necesaria\"*.\n3.  **Concisión:** Prioriza respuestas breves, directas y sin información redundante.\n4.  **Aislamiento:** La memoria es única por cada `chat_id` de Telegram.",
+        "height": 496,
+        "width": 704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1552,
+        272
+      ],
+      "typeVersion": 1,
+      "id": "21da8776-7ec4-4323-b0cd-39044085638b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## INGESTA\n",
+        "height": 384,
+        "width": 2048
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -736,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "67c8da4c-735c-4759-90b1-987564ada8eb",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## CHAT\n",
+        "height": 384,
+        "width": 2048
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        352
+      ],
+      "typeVersion": 1,
+      "id": "bdee038b-981d-49a9-bfed-b2f50ea0cfa4",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store2",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter1": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store2": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        []
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant data",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Qdrant Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant data": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "fb131de5-0788-4710-af2e-3276651413c5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0714c45eb2e4d4a8bf01f50b2fbf45dd305fbcb821687fd00573ebccd4af9a3f"
+  },
+  "id": "xqNv6Fqeis8D1o-b9yVAN",
+  "tags": []
+}

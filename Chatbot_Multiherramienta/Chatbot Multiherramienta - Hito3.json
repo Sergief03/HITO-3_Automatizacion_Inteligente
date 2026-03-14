@@ -3,6 +3,167 @@
   "nodes": [
     {
       "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "clima",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1c652f69-00cb-4356-8de4-c1086d15931c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Clima"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "paises",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "dd05cc06-6ee6-4f81-9d70-2dc97f021b4c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Paises"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "wikipedia",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4b40f960-6d97-4c8b-9241-f441ccff1e4b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Wikipedia"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "4506f2ad-c170-4c1c-91b0-687ae7feb8d4",
+      "name": "Router Herramienta",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        960,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "66442de0-7867-458e-9572-2592319603ea",
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        848
+      ],
+      "webhookId": "chatbot-hito3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mensaje = body.mensaje || body.message || '';\nconst sessionId = body.session_id || body.sessionId || 'default-session';\n\nif (!mensaje.trim()) {\n  throw new Error('El campo mensaje es obligatorio');\n}\n\nreturn [{\n  json: {\n    mensaje: mensaje.trim(),\n    sessionId: sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "daffe203-56c6-42e8-ba0b-d03051977306",
+      "name": "Validar Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Validar Input').item.json;\n\n// El agente devuelve array - buscar el primer item con JSON válido en 'output'\nconst items = $input.all();\nlet clasificacion = { herramienta: 'ninguna', parametros: {}, razon: '' };\n\nfor (const item of items) {\n  const raw = item.json.output || item.json.text || item.json.response || '';\n  try {\n    const parsed = JSON.parse(raw.trim());\n    if (parsed.herramienta && parsed.herramienta !== 'ninguna') {\n      clasificacion = parsed;\n      break; // Encontrado, salir del bucle\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nreturn [{\n  json: {\n    mensaje:             inputData.mensaje,\n    session_id:          inputData.session_id,\n    timestamp:           inputData.timestamp,\n    herramienta:         clasificacion.herramienta  || 'ninguna',\n    parametros:          clasificacion.parametros   || {},\n    razon_clasificacion: clasificacion.razon        || ''\n  }\n}];"
+      },
+      "id": "d6f1e8d0-53f1-4f6b-bf95-b5806857241c",
+      "name": "Parsear Intencion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $json.geo.lat }}&longitude={{ $json.geo.lon }}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=3",
+        "options": {}
+      },
+      "id": "ff635edb-687c-47bd-a1ac-98ccfe312c8d",
+      "name": "API OpenMeteo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        848,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const clima = $json;\nconst geo = $('Extraer Coordenadas').item.json.geo;\nconst inputData = $('Parsear Intencion').item.json;\n\nconst wmo = {0:'Despejado',1:'Mayormente despejado',2:'Parcialmente nublado',3:'Nublado',45:'Niebla',51:'Llovizna leve',61:'Lluvia leve',63:'Lluvia moderada',65:'Lluvia intensa',71:'Nieve leve',80:'Chubascos',95:'Tormenta',99:'Tormenta con granizo'};\n\nconst c = clima.current;\nconst d = clima.daily;\nconst estado = wmo[c.weather_code] || ('Codigo ' + c.weather_code);\n\nconst contexto = 'Ciudad: ' + geo.nombre + ', ' + geo.pais + '\\nTemperatura: ' + c.temperature_2m + 'C (sensacion ' + c.apparent_temperature + 'C)\\nViento: ' + c.wind_speed_10m + ' km/h\\nHumedad: ' + c.relative_humidity_2m + '%\\nEstado: ' + estado + '\\nProximos 3 dias:\\n- Hoy: ' + d.temperature_2m_min[0] + 'C - ' + d.temperature_2m_max[0] + 'C | Lluvia: ' + d.precipitation_sum[0] + 'mm\\n- Manana: ' + d.temperature_2m_min[1] + 'C - ' + d.temperature_2m_max[1] + 'C | Lluvia: ' + d.precipitation_sum[1] + 'mm\\n- Pasado: ' + d.temperature_2m_min[2] + 'C - ' + d.temperature_2m_max[2] + 'C | Lluvia: ' + d.precipitation_sum[2] + 'mm';\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
+      },
+      "id": "3f5e2a34-95e6-4d12-b10b-68ae0b2e3d09",
+      "name": "Formatear Clima",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        608
+      ]
+    },
+    {
+      "parameters": {
         "promptType": "define",
         "text": "=Responde SOLO con JSON, sin explicaciones, sin texto adicional, sin markdown.\n\nClasifica este mensaje en una de estas herramientas: clima, paises, wikipedia, ninguna.\n\nEJEMPLOS:\nMensaje: \"que tiempo hace en barcelona\" → {\"herramienta\":\"clima\",\"parametros\":{\"ciudad\":\"barcelona\"},\"razon\":\"pregunta clima\"}\nMensaje: \"capital de francia\" → {\"herramienta\":\"paises\",\"parametros\":{\"pais\":\"france\"},\"razon\":\"pregunta pais\"}\nMensaje: \"quien fue napoleon\" → {\"herramienta\":\"wikipedia\",\"parametros\":{\"query\":\"napoleon\"},\"razon\":\"pregunta wikipedia\"}\nMensaje: \"hola como estas\" → {\"herramienta\":\"ninguna\",\"parametros\":{},\"razon\":\"saludo\"}\nMensaje: \"busca en wikipedia japon\" → {\"herramienta\":\"wikipedia\",\"parametros\":{\"query\":\"japon\"},\"razon\":\"busqueda wikipedia\"}\n\nMensaje a clasificar: {{ $('Validar Input').item.json.mensaje }}\n\nJSON:",
         "options": {}
@@ -10,10 +171,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        656,
-        736
+        -176,
+        832
       ],
-      "id": "44c37216-518b-4eae-9dbc-892d14265898",
+      "id": "c826294c-820b-4504-90f7-5df224655234",
       "name": "AI Agent"
     },
     {
@@ -24,10 +185,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        656,
-        960
+        -176,
+        1056
       ],
-      "id": "0fed1d35-1594-4583-8990-2a5b1baa0773",
+      "id": "38f6e0c9-0cca-49a8-a38e-8745430c9720",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -37,14 +198,41 @@
       }
     },
     {
+      "parameters": {
+        "url": "=https://geocoding-api.open-meteo.com/v1/search?name={{ encodeURIComponent($json.parametros.ciudad) }}&count=1&language=es&format=json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        672
+      ],
+      "id": "5c18dc12-89e6-4465-9ffd-cc397221e479",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\nconst inputData = $('Parsear Intencion').item.json;\n\nif (!data.results || data.results.length === 0) {\n  throw new Error('Ciudad no encontrada: ' + (inputData.parametros.ciudad || 'desconocida'));\n}\n\nconst loc = data.results[0];\n\nreturn [{\n  json: {\n    mensaje:     inputData.mensaje,\n    session_id:  inputData.session_id,\n    herramienta: inputData.herramienta,\n    parametros:  inputData.parametros,\n    geo: {\n      nombre: loc.name,\n      pais:   loc.country,\n      lat:    loc.latitude,\n      lon:    loc.longitude\n    }\n  }\n}];"
+      },
+      "id": "bc0f811e-6937-40e6-8d1c-232ddbe66939",
+      "name": "Extraer Coordenadas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        624
+      ]
+    },
+    {
       "parameters": {},
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        752,
-        928
+        -80,
+        1024
       ],
-      "id": "bfdaeab0-cd0f-40e4-aec1-44daaf23b534",
+      "id": "3ca0cfe1-b120-4fab-968b-b471b2d3cd1e",
       "name": "Postgres Chat Memory",
       "credentials": {
         "postgres": {
@@ -55,87 +243,163 @@
     },
     {
       "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "clima",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1c652f69-00cb-4356-8de4-c1086d15931c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Clima"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "paises",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "dd05cc06-6ee6-4f81-9d70-2dc97f021b4c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Paises"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.herramienta }}",
+                    "rightValue": "wikipedia",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4b40f960-6d97-4c8b-9241-f441ccff1e4b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Wikipedia"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "5304d012-de8c-4c44-8516-ef658ae9c3bb",
+      "name": "Router Herramienta1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        336,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Validar Input').item.json;\nconst intencion = $('Parsear Intencion').item.json;\n\nconst agentOutput = $('Chain Generar Respuesta').item.json;\nlet respuesta = agentOutput.output || agentOutput.text || agentOutput.response || 'No se pudo generar respuesta.';\n\n// Eliminar el razonamiento interno del modelo (todo lo que va antes del contenido real)\n// El modelo suele terminar el razonamiento con ** o con un salto doble\nconst separadores = [\n  /\\*\\*Japón[\\s\\S]*/,        // Buscar inicio del contenido real con **\n  /\\n\\n([^*\\n].+[\\s\\S]*)/,  // Primer párrafo real tras línea en blanco\n];\n\nfor (const sep of separadores) {\n  const match = respuesta.match(sep);\n  if (match) {\n    respuesta = match[0].trim();\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ok: true,\n    session_id:        inputData.session_id,\n    mensaje_usuario:   inputData.mensaje,\n    respuesta:         respuesta.trim(),\n    herramienta_usada: intencion.herramienta || 'ninguna',\n    timestamp:         new Date().toISOString()\n  }\n}];"
+      },
+      "id": "bda438fe-257b-47da-b72e-4cac6d9a28ce",
+      "name": "Construir Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        816
+      ],
+      "id": "c112815b-c318-4489-97ce-2ceb9544099e",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eE2I1mYDh4TdGEvA",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un asistente virtual inteligente y amigable. Responde siempre en espanol de forma clara y concisa. Si recibes informacion de herramientas externas, usala como base para tu respuesta. Manten el contexto de la conversacion.\n\nInformacion obtenida (herramienta: {{ $json.herramienta }}):\n{{ $json.contexto_api || 'No se uso herramienta externa.' }}\n\nMensaje del usuario:\n{{ $json.mensaje }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1296,
+        608
+      ],
+      "id": "c613f094-596e-49d3-ad13-b1142e361743",
+      "name": "Chain Generar Respuesta"
+    },
+    {
+      "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify($json) }}",
         "options": {
           "responseCode": 200
         }
       },
-      "id": "d32d985d-cb7b-435d-a465-0116ef2890fd",
-      "name": "Responder Cliente",
+      "id": "b7146f1b-2a16-460c-8577-908ed65eea97",
+      "name": "Responder Cliente1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1040,
-        736
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "chat",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "bbe9b036-c0c6-4a9a-8245-6f3a34ca4a02",
-      "name": "Webhook Entrada",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        96,
-        736
-      ],
-      "webhookId": "chatbot-hito3"
-    },
-    {
-      "parameters": {
-        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mensaje = body.mensaje || body.message || '';\nconst sessionId = body.session_id || body.sessionId || 'default-session';\n\nif (!mensaje.trim()) {\n  throw new Error('El campo mensaje es obligatorio');\n}\n\nreturn [{\n  json: {\n    mensaje: mensaje.trim(),\n    sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
-      },
-      "id": "1ab5a4c1-ce21-40a0-8dd5-e1d42210e795",
-      "name": "Validar Input",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        384,
-        736
+        2000,
+        608
       ]
     }
   ],
   "pinData": {},
   "connections": {
-    "Ollama Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Responder Cliente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Webhook Entrada": {
       "main": [
         [
@@ -157,6 +421,141 @@
           }
         ]
       ]
+    },
+    "Parsear Intencion": {
+      "main": [
+        [
+          {
+            "node": "Router Herramienta1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API OpenMeteo": {
+      "main": [
+        [
+          {
+            "node": "Formatear Clima",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parsear Intencion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extraer Coordenadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Coordenadas": {
+      "main": [
+        [
+          {
+            "node": "API OpenMeteo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Herramienta1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        []
+      ]
+    },
+    "Construir Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Cliente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chain Generar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Construir Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Clima": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -165,7 +564,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "d37e1e11-1f62-4628-8008-fd268ccde372",
+  "versionId": "5a0abc11-ebd7-459a-bfd0-e20272f6a225",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"

@@ -394,6 +394,26 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Validar Input').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        2304,
+        2416
+      ],
+      "id": "4ae71b61-9354-42f9-bace-d3a78672b543",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "qOgHZHTGHv58p2Gb",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -638,6 +658,17 @@
           }
         ]
       ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -646,7 +677,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "8e3e5a72-fd93-4cbc-b330-8076b2743656",
+  "versionId": "16953fee-6c16-448e-a2f4-0674833a5ffe",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"

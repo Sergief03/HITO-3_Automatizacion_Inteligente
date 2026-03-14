@@ -3,6 +3,49 @@
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f57d3be3-2400-47de-8209-5830dc8cda77",
+      "name": "Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        640,
+        1712
+      ],
+      "webhookId": "chatbot-hito3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mensaje = body.mensaje || body.message || '';\nconst sessionId = body.session_id || body.sessionId || 'default-session';\n\nif (!mensaje.trim()) {\n  throw new Error('El campo mensaje es obligatorio');\n}\n\nreturn [{\n  json: {\n    mensaje: mensaje.trim(),\n    sessionId: sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "30524481-d5dd-4c93-bb1b-1a309d15d736",
+      "name": "Validar Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Validar Input').item.json;\n\n// El agente devuelve array - buscar el primer item con JSON válido en 'output'\nconst items = $input.all();\nlet clasificacion = { herramienta: 'ninguna', parametros: {}, razon: '' };\n\nfor (const item of items) {\n  const raw = item.json.output || item.json.text || item.json.response || '';\n  try {\n    const parsed = JSON.parse(raw.trim());\n    if (parsed.herramienta && parsed.herramienta !== 'ninguna') {\n      clasificacion = parsed;\n      break; // Encontrado, salir del bucle\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nreturn [{\n  json: {\n    mensaje:             inputData.mensaje,\n    session_id:          inputData.session_id,\n    timestamp:           inputData.timestamp,\n    herramienta:         clasificacion.herramienta  || 'ninguna',\n    parametros:          clasificacion.parametros   || {},\n    razon_clasificacion: clasificacion.razon        || ''\n  }\n}];"
+      },
+      "id": "de7a7885-5879-467a-9d76-c091cf2dbc04",
+      "name": "Parsear Intencion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        1712
+      ]
+    },
+    {
+      "parameters": {
         "rules": {
           "values": [
             {
@@ -83,56 +126,13 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "4506f2ad-c170-4c1c-91b0-687ae7feb8d4",
+      "id": "e24673b0-5161-4fd2-b934-ef047f6bc8d7",
       "name": "Router Herramienta",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        960,
-        192
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "chat",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "66442de0-7867-458e-9572-2592319603ea",
-      "name": "Webhook Entrada",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        -752,
-        848
-      ],
-      "webhookId": "chatbot-hito3"
-    },
-    {
-      "parameters": {
-        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mensaje = body.mensaje || body.message || '';\nconst sessionId = body.session_id || body.sessionId || 'default-session';\n\nif (!mensaje.trim()) {\n  throw new Error('El campo mensaje es obligatorio');\n}\n\nreturn [{\n  json: {\n    mensaje: mensaje.trim(),\n    sessionId: sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
-      },
-      "id": "daffe203-56c6-42e8-ba0b-d03051977306",
-      "name": "Validar Input",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -448,
-        848
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const inputData = $('Validar Input').item.json;\n\n// El agente devuelve array - buscar el primer item con JSON válido en 'output'\nconst items = $input.all();\nlet clasificacion = { herramienta: 'ninguna', parametros: {}, razon: '' };\n\nfor (const item of items) {\n  const raw = item.json.output || item.json.text || item.json.response || '';\n  try {\n    const parsed = JSON.parse(raw.trim());\n    if (parsed.herramienta && parsed.herramienta !== 'ninguna') {\n      clasificacion = parsed;\n      break; // Encontrado, salir del bucle\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nreturn [{\n  json: {\n    mensaje:             inputData.mensaje,\n    session_id:          inputData.session_id,\n    timestamp:           inputData.timestamp,\n    herramienta:         clasificacion.herramienta  || 'ninguna',\n    parametros:          clasificacion.parametros   || {},\n    razon_clasificacion: clasificacion.razon        || ''\n  }\n}];"
-      },
-      "id": "d6f1e8d0-53f1-4f6b-bf95-b5806857241c",
-      "name": "Parsear Intencion",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        144,
-        848
+        1728,
+        1680
       ]
     },
     {
@@ -140,26 +140,105 @@
         "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $json.geo.lat }}&longitude={{ $json.geo.lon }}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=3",
         "options": {}
       },
-      "id": "ff635edb-687c-47bd-a1ac-98ccfe312c8d",
+      "id": "a140b154-a2e7-481d-8d7b-72c9ac5002c3",
       "name": "API OpenMeteo",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        848,
-        608
+        2240,
+        1472
       ]
     },
     {
       "parameters": {
         "jsCode": "const clima = $json;\nconst geo = $('Extraer Coordenadas').item.json.geo;\nconst inputData = $('Parsear Intencion').item.json;\n\nconst wmo = {0:'Despejado',1:'Mayormente despejado',2:'Parcialmente nublado',3:'Nublado',45:'Niebla',51:'Llovizna leve',61:'Lluvia leve',63:'Lluvia moderada',65:'Lluvia intensa',71:'Nieve leve',80:'Chubascos',95:'Tormenta',99:'Tormenta con granizo'};\n\nconst c = clima.current;\nconst d = clima.daily;\nconst estado = wmo[c.weather_code] || ('Codigo ' + c.weather_code);\n\nconst contexto = 'Ciudad: ' + geo.nombre + ', ' + geo.pais + '\\nTemperatura: ' + c.temperature_2m + 'C (sensacion ' + c.apparent_temperature + 'C)\\nViento: ' + c.wind_speed_10m + ' km/h\\nHumedad: ' + c.relative_humidity_2m + '%\\nEstado: ' + estado + '\\nProximos 3 dias:\\n- Hoy: ' + d.temperature_2m_min[0] + 'C - ' + d.temperature_2m_max[0] + 'C | Lluvia: ' + d.precipitation_sum[0] + 'mm\\n- Manana: ' + d.temperature_2m_min[1] + 'C - ' + d.temperature_2m_max[1] + 'C | Lluvia: ' + d.precipitation_sum[1] + 'mm\\n- Pasado: ' + d.temperature_2m_min[2] + 'C - ' + d.temperature_2m_max[2] + 'C | Lluvia: ' + d.precipitation_sum[2] + 'mm';\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
       },
-      "id": "3f5e2a34-95e6-4d12-b10b-68ae0b2e3d09",
+      "id": "290fcb44-17ae-4000-89d8-727f7b3792a6",
       "name": "Formatear Clima",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        608
+        2416,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch={{ encodeURIComponent($json.parametros.query || '') }}&format=json&origin=*&srlimit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "n8n-chatbot/1.0 (educational project)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2a6fcfc8-6cf0-4b44-a49d-27fdde9a113a",
+      "name": "API Wikipedia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1984,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Parsear Intencion').item.json;\nconst wiki = $json;\n\nconst titulo = wiki.title || 'Sin titulo';\nconst resumen = wiki.extract || 'Sin informacion disponible';\nconst url = (wiki.content_urls && wiki.content_urls.desktop) ? wiki.content_urls.desktop.page : '';\nconst resumenCorto = resumen.length > 800 ? resumen.substring(0, 800) + '...' : resumen;\n\nconst contexto = 'Tema: ' + titulo + '\\nResumen: ' + resumenCorto + '\\nMas info: ' + url;\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
+      },
+      "id": "53bfea6e-75c5-4182-8c76-6eec1eedb403",
+      "name": "Formatear Wikipedia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Parsear Intencion').item.json;\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: ''\n  }\n}];"
+      },
+      "id": "a6961acb-3a02-4ae0-8b95-d15d9cc14df9",
+      "name": "Sin Herramienta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        2192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Validar Input').item.json;\nconst intencion = $('Parsear Intencion').item.json;\n\nconst agentOutput = $('Chain Generar Respuesta').item.json;\nlet respuesta = agentOutput.output || agentOutput.text || agentOutput.response || 'No se pudo generar respuesta.';\n\n// Eliminar el razonamiento interno del modelo (todo lo que va antes del contenido real)\n// El modelo suele terminar el razonamiento con ** o con un salto doble\nconst separadores = [\n  /\\*\\*Japón[\\s\\S]*/,        // Buscar inicio del contenido real con **\n  /\\n\\n([^*\\n].+[\\s\\S]*)/,  // Primer párrafo real tras línea en blanco\n];\n\nfor (const sep of separadores) {\n  const match = respuesta.match(sep);\n  if (match) {\n    respuesta = match[0].trim();\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ok: true,\n    session_id:        inputData.session_id,\n    mensaje_usuario:   inputData.mensaje,\n    respuesta:         respuesta.trim(),\n    herramienta_usada: intencion.herramienta || 'ninguna',\n    timestamp:         new Date().toISOString()\n  }\n}];"
+      },
+      "id": "cddbf724-187b-440d-8445-b608a0cbdcf6",
+      "name": "Construir Respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "03d6cf1b-1aea-47c9-ba23-c82a987c3c4d",
+      "name": "Responder Cliente",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3408,
+        1840
       ]
     },
     {
@@ -171,10 +250,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -176,
-        832
+        1216,
+        1696
       ],
-      "id": "c826294c-820b-4504-90f7-5df224655234",
+      "id": "4484c450-c796-42b9-b18e-8a21bdfdf8dc",
       "name": "AI Agent"
     },
     {
@@ -185,10 +264,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -176,
-        1056
+        1216,
+        1920
       ],
-      "id": "38f6e0c9-0cca-49a8-a38e-8745430c9720",
+      "id": "478a6b5e-8232-4864-9a4c-f0a5e7fa87b3",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -199,164 +278,16 @@
     },
     {
       "parameters": {
-        "url": "=https://geocoding-api.open-meteo.com/v1/search?name={{ encodeURIComponent($json.parametros.ciudad) }}&count=1&language=es&format=json",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        464,
-        672
-      ],
-      "id": "5c18dc12-89e6-4465-9ffd-cc397221e479",
-      "name": "HTTP Request"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $json;\nconst inputData = $('Parsear Intencion').item.json;\n\nif (!data.results || data.results.length === 0) {\n  throw new Error('Ciudad no encontrada: ' + (inputData.parametros.ciudad || 'desconocida'));\n}\n\nconst loc = data.results[0];\n\nreturn [{\n  json: {\n    mensaje:     inputData.mensaje,\n    session_id:  inputData.session_id,\n    herramienta: inputData.herramienta,\n    parametros:  inputData.parametros,\n    geo: {\n      nombre: loc.name,\n      pais:   loc.country,\n      lat:    loc.latitude,\n      lon:    loc.longitude\n    }\n  }\n}];"
-      },
-      "id": "bc0f811e-6937-40e6-8d1c-232ddbe66939",
-      "name": "Extraer Coordenadas",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        656,
-        624
-      ]
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.3,
-      "position": [
-        -80,
-        1024
-      ],
-      "id": "3ca0cfe1-b120-4fab-968b-b471b2d3cd1e",
-      "name": "Postgres Chat Memory",
-      "credentials": {
-        "postgres": {
-          "id": "qOgHZHTGHv58p2Gb",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 1
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.herramienta }}",
-                    "rightValue": "clima",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "1c652f69-00cb-4356-8de4-c1086d15931c"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Clima"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 1
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.herramienta }}",
-                    "rightValue": "paises",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "dd05cc06-6ee6-4f81-9d70-2dc97f021b4c"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Paises"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 1
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.herramienta }}",
-                    "rightValue": "wikipedia",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "4b40f960-6d97-4c8b-9241-f441ccff1e4b"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Wikipedia"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "id": "5304d012-de8c-4c44-8516-ef658ae9c3bb",
-      "name": "Router Herramienta1",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [
-        336,
-        816
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const inputData = $('Validar Input').item.json;\nconst intencion = $('Parsear Intencion').item.json;\n\nconst agentOutput = $('Chain Generar Respuesta').item.json;\nlet respuesta = agentOutput.output || agentOutput.text || agentOutput.response || 'No se pudo generar respuesta.';\n\n// Eliminar el razonamiento interno del modelo (todo lo que va antes del contenido real)\n// El modelo suele terminar el razonamiento con ** o con un salto doble\nconst separadores = [\n  /\\*\\*Japón[\\s\\S]*/,        // Buscar inicio del contenido real con **\n  /\\n\\n([^*\\n].+[\\s\\S]*)/,  // Primer párrafo real tras línea en blanco\n];\n\nfor (const sep of separadores) {\n  const match = respuesta.match(sep);\n  if (match) {\n    respuesta = match[0].trim();\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ok: true,\n    session_id:        inputData.session_id,\n    mensaje_usuario:   inputData.mensaje,\n    respuesta:         respuesta.trim(),\n    herramienta_usada: intencion.herramienta || 'ninguna',\n    timestamp:         new Date().toISOString()\n  }\n}];"
-      },
-      "id": "bda438fe-257b-47da-b72e-4cac6d9a28ce",
-      "name": "Construir Respuesta",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1744,
-        912
-      ]
-    },
-    {
-      "parameters": {
         "model": "gpt-oss:20b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1312,
-        1120
+        2704,
+        2048
       ],
-      "id": "c112815b-c318-4489-97ce-2ceb9544099e",
+      "id": "b677ca3d-929b-4bc0-865d-933e6c8b6884",
       "name": "Ollama Chat Model1",
       "credentials": {
         "ollamaApi": {
@@ -374,41 +305,55 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1312,
-        912
+        2704,
+        1840
       ],
-      "id": "c613f094-596e-49d3-ad13-b1142e361743",
+      "id": "7dbf6113-717f-4eea-a315-e629532843bf",
       "name": "Chain Generar Respuesta"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json) }}",
-        "options": {
-          "responseCode": 200
-        }
+        "url": "=https://geocoding-api.open-meteo.com/v1/search?name={{ encodeURIComponent($json.parametros.ciudad) }}&count=1&language=es&format=json",
+        "options": {}
       },
-      "id": "b7146f1b-2a16-460c-8577-908ed65eea97",
-      "name": "Responder Cliente1",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
       "position": [
-        2016,
-        912
-      ]
+        1856,
+        1536
+      ],
+      "id": "b2118387-9477-436d-ae99-04a2f292779b",
+      "name": "HTTP Request"
     },
     {
       "parameters": {
-        "jsCode": "const inputData = $('Parsear Intencion').item.json;\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: ''\n  }\n}];"
+        "jsCode": "const data = $json;\nconst inputData = $('Parsear Intencion').item.json;\n\nif (!data.results || data.results.length === 0) {\n  throw new Error('Ciudad no encontrada: ' + (inputData.parametros.ciudad || 'desconocida'));\n}\n\nconst loc = data.results[0];\n\nreturn [{\n  json: {\n    mensaje:     inputData.mensaje,\n    session_id:  inputData.session_id,\n    herramienta: inputData.herramienta,\n    parametros:  inputData.parametros,\n    geo: {\n      nombre: loc.name,\n      pais:   loc.country,\n      lat:    loc.latitude,\n      lon:    loc.longitude\n    }\n  }\n}];"
       },
-      "id": "985b5063-b320-42a3-89d3-c84b8ec21cc4",
-      "name": "Sin Herramienta",
+      "id": "e8b7270d-b0ea-40ca-8e5a-e2949d6b0302",
+      "name": "Extraer Coordenadas",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        1184
+        2048,
+        1488
       ]
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        1888
+      ],
+      "id": "382ac139-f3f2-42ad-9518-6f581b45bdae",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "qOgHZHTGHv58p2Gb",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -439,7 +384,33 @@
       "main": [
         [
           {
-            "node": "Router Herramienta1",
+            "node": "Router Herramienta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Herramienta": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "API Wikipedia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin Herramienta",
             "type": "main",
             "index": 0
           }
@@ -451,6 +422,61 @@
         [
           {
             "node": "Formatear Clima",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Clima": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Wikipedia": {
+      "main": [
+        [
+          {
+            "node": "Formatear Wikipedia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Wikipedia": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sin Herramienta": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder Cliente",
             "type": "main",
             "index": 0
           }
@@ -474,6 +500,28 @@
           {
             "node": "AI Agent",
             "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chain Generar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "Construir Respuesta",
+            "type": "main",
             "index": 0
           }
         ]
@@ -511,81 +559,6 @@
           }
         ]
       ]
-    },
-    "Router Herramienta1": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [],
-        [],
-        [
-          {
-            "node": "Sin Herramienta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Construir Respuesta": {
-      "main": [
-        [
-          {
-            "node": "Responder Cliente1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ollama Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Chain Generar Respuesta",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Chain Generar Respuesta": {
-      "main": [
-        [
-          {
-            "node": "Construir Respuesta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Formatear Clima": {
-      "main": [
-        [
-          {
-            "node": "Chain Generar Respuesta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sin Herramienta": {
-      "main": [
-        [
-          {
-            "node": "Chain Generar Respuesta",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": false,
@@ -594,7 +567,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "e4294acd-0daf-4eff-8cd0-faefdfe760dd",
+  "versionId": "c7adf262-a699-4361-b44b-52611c3cb9de",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"

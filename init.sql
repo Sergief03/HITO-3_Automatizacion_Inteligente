@@ -1,7 +1,7 @@
 -- Base de datos del chatbot multiherramienta
 CREATE DATABASE chatbot_multiherramienta;
 
-USE chatbot_multiherramienta;
+\c chatbot_multiherramienta
 
 -- Tabla de conversaciones
 
@@ -26,3 +26,18 @@ CREATE VIEW historial_sesion AS
            created_at
     FROM conversaciones
     ORDER BY session_id, created_at;
+
+-----------------
+--Tabla para CHATBOT RAG
+-----------------
+
+CREATE DATABASE chatbot_rag;
+
+\c chatbot_rag
+
+CREATE TABLE documentos (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(255),
+    num_chunks INTEGER,
+    fecha TIMESTAMP DEFAULT NOW()
+);

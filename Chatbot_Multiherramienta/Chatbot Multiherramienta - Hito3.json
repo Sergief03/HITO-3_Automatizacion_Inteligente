@@ -414,6 +414,69 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "content": "##  1. Primera etapa \n\nRecepción y validación del mensaje del usuario para la IA\n",
+        "height": 320,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        64,
+        2000
+      ],
+      "id": "6a0f2598-74b7-419f-91b2-19a28fcdaf70",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Segunda etapa \n\nLa IA procesa la peticion del usuario y decide que herramienta se va a usar para responderle posteriormente. Luego de que responda se procesa su respuesta para que se pueda decidir correctamente la herramienta a usar\n",
+        "height": 544,
+        "width": 576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        1968
+      ],
+      "id": "7f9925c5-003a-4b16-a2eb-326d623c70f2",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 3. Tercera etapa\n\nAqui el worklow pasa por la herramienta que se haya decidido y segun cual sea se usan diferentes nodos de código para que se pueda hacer correctamente la petición HTTP y posteriormente se parsea para que vuelva correctamente a la IA ",
+        "height": 1088,
+        "width": 960,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        1696
+      ],
+      "id": "7a57a533-d04f-4627-8c3b-4e69b2a4994d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 4. Cuarta etapa\n\nCon toda la información la IA genera la respuesta final para el usuario la construye correctamente y se la manda",
+        "height": 480,
+        "width": 944,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        2128
+      ],
+      "id": "5efa1c5a-3a50-4769-9f57-cc7e35f44366",
+      "name": "Sticky Note3"
     }
   ],
   "pinData": {},
@@ -677,7 +740,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "0866af1d-9eee-4e58-8d8b-338cee2b18ed",
+  "versionId": "32234f27-e3fd-429d-bcd7-428c715ad389",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"

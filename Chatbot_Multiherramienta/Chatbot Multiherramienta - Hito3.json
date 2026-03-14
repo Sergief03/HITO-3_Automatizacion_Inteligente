@@ -341,8 +341,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1728,
-        608
+        1744,
+        912
       ]
     },
     {
@@ -353,8 +353,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1296,
-        816
+        1312,
+        1120
       ],
       "id": "c112815b-c318-4489-97ce-2ceb9544099e",
       "name": "Ollama Chat Model1",
@@ -374,8 +374,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1296,
-        608
+        1312,
+        912
       ],
       "id": "c613f094-596e-49d3-ad13-b1142e361743",
       "name": "Chain Generar Respuesta"
@@ -393,8 +393,21 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2000,
-        608
+        2016,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Parsear Intencion').item.json;\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: ''\n  }\n}];"
+      },
+      "id": "985b5063-b320-42a3-89d3-c84b8ec21cc4",
+      "name": "Sin Herramienta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        1184
       ]
     }
   ],
@@ -510,7 +523,13 @@
         ],
         [],
         [],
-        []
+        [
+          {
+            "node": "Sin Herramienta",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Construir Respuesta": {
@@ -556,6 +575,17 @@
           }
         ]
       ]
+    },
+    "Sin Herramienta": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -564,7 +594,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "5a0abc11-ebd7-459a-bfd0-e20272f6a225",
+  "versionId": "e4294acd-0daf-4eff-8cd0-faefdfe760dd",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"

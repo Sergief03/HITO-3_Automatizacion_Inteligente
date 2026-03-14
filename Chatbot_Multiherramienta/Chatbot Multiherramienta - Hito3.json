@@ -8,13 +8,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "f57d3be3-2400-47de-8209-5830dc8cda77",
+      "id": "4d8bf887-bb5a-4ac5-a4e3-f1b39f275de4",
       "name": "Webhook Entrada",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        640,
-        1712
+        144,
+        2128
       ],
       "webhookId": "chatbot-hito3"
     },
@@ -22,26 +22,26 @@
       "parameters": {
         "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mensaje = body.mensaje || body.message || '';\nconst sessionId = body.session_id || body.sessionId || 'default-session';\n\nif (!mensaje.trim()) {\n  throw new Error('El campo mensaje es obligatorio');\n}\n\nreturn [{\n  json: {\n    mensaje: mensaje.trim(),\n    sessionId: sessionId,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
-      "id": "30524481-d5dd-4c93-bb1b-1a309d15d736",
+      "id": "6ff2b513-8286-40ab-8202-7022c5e8a7b6",
       "name": "Validar Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        944,
-        1712
+        448,
+        2128
       ]
     },
     {
       "parameters": {
         "jsCode": "const inputData = $('Validar Input').item.json;\n\n// El agente devuelve array - buscar el primer item con JSON válido en 'output'\nconst items = $input.all();\nlet clasificacion = { herramienta: 'ninguna', parametros: {}, razon: '' };\n\nfor (const item of items) {\n  const raw = item.json.output || item.json.text || item.json.response || '';\n  try {\n    const parsed = JSON.parse(raw.trim());\n    if (parsed.herramienta && parsed.herramienta !== 'ninguna') {\n      clasificacion = parsed;\n      break; // Encontrado, salir del bucle\n    }\n  } catch(e) {\n    continue;\n  }\n}\n\nreturn [{\n  json: {\n    mensaje:             inputData.mensaje,\n    session_id:          inputData.session_id,\n    timestamp:           inputData.timestamp,\n    herramienta:         clasificacion.herramienta  || 'ninguna',\n    parametros:          clasificacion.parametros   || {},\n    razon_clasificacion: clasificacion.razon        || ''\n  }\n}];"
       },
-      "id": "de7a7885-5879-467a-9d76-c091cf2dbc04",
+      "id": "4a813271-d726-4d12-8588-0212c873dfd1",
       "name": "Parsear Intencion",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1536,
-        1712
+        1040,
+        2128
       ]
     },
     {
@@ -126,13 +126,13 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "e24673b0-5161-4fd2-b934-ef047f6bc8d7",
+      "id": "0c2c5a49-e7f4-46ca-bf5e-012619f30f03",
       "name": "Router Herramienta",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        1728,
-        1680
+        1232,
+        2096
       ]
     },
     {
@@ -140,26 +140,53 @@
         "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $json.geo.lat }}&longitude={{ $json.geo.lon }}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=3",
         "options": {}
       },
-      "id": "a140b154-a2e7-481d-8d7b-72c9ac5002c3",
+      "id": "dec3cdc3-35ff-423b-8020-045eac8a2319",
       "name": "API OpenMeteo",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2240,
-        1472
+        1744,
+        1888
       ]
     },
     {
       "parameters": {
         "jsCode": "const clima = $json;\nconst geo = $('Extraer Coordenadas').item.json.geo;\nconst inputData = $('Parsear Intencion').item.json;\n\nconst wmo = {0:'Despejado',1:'Mayormente despejado',2:'Parcialmente nublado',3:'Nublado',45:'Niebla',51:'Llovizna leve',61:'Lluvia leve',63:'Lluvia moderada',65:'Lluvia intensa',71:'Nieve leve',80:'Chubascos',95:'Tormenta',99:'Tormenta con granizo'};\n\nconst c = clima.current;\nconst d = clima.daily;\nconst estado = wmo[c.weather_code] || ('Codigo ' + c.weather_code);\n\nconst contexto = 'Ciudad: ' + geo.nombre + ', ' + geo.pais + '\\nTemperatura: ' + c.temperature_2m + 'C (sensacion ' + c.apparent_temperature + 'C)\\nViento: ' + c.wind_speed_10m + ' km/h\\nHumedad: ' + c.relative_humidity_2m + '%\\nEstado: ' + estado + '\\nProximos 3 dias:\\n- Hoy: ' + d.temperature_2m_min[0] + 'C - ' + d.temperature_2m_max[0] + 'C | Lluvia: ' + d.precipitation_sum[0] + 'mm\\n- Manana: ' + d.temperature_2m_min[1] + 'C - ' + d.temperature_2m_max[1] + 'C | Lluvia: ' + d.precipitation_sum[1] + 'mm\\n- Pasado: ' + d.temperature_2m_min[2] + 'C - ' + d.temperature_2m_max[2] + 'C | Lluvia: ' + d.precipitation_sum[2] + 'mm';\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
       },
-      "id": "290fcb44-17ae-4000-89d8-727f7b3792a6",
+      "id": "2c5043a3-fe81-4a5f-8fee-6cc872b1641c",
       "name": "Formatear Clima",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2416,
-        1472
+        1920,
+        1888
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://restcountries.com/v3.1/name/{{ $json.parametros.pais }}",
+        "options": {}
+      },
+      "id": "ff0aef3b-6596-45f4-bf57-39e8d8705dde",
+      "name": "API REST Countries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1680,
+        2128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Normalizar Pais').item.json;\nconst paises = Array.isArray($json) ? $json : [$json];\nconst p = paises[0];\n\nconst nombre = (p.translations && p.translations.spa) ? p.translations.spa.common : (p.name ? p.name.common : 'Desconocido');\nconst capital = (p.capital && p.capital[0]) ? p.capital[0] : 'Sin datos';\nconst poblacion = p.population ? p.population.toLocaleString('es-ES') : 'Sin datos';\nconst monedas = p.currencies ? Object.values(p.currencies).map(function(m) { return m.name + ' (' + (m.symbol || '') + ')'; }).join(', ') : 'Sin datos';\nconst idiomas = p.languages ? Object.values(p.languages).join(', ') : 'Sin datos';\nconst superficie = p.area ? p.area.toLocaleString('es-ES') + ' km2' : 'Sin datos';\nconst region = (p.subregion || '') + ', ' + (p.region || '');\n\nconst contexto = 'Pais: ' + nombre + '\\nCapital: ' + capital + '\\nPoblacion: ' + poblacion + ' habitantes\\nMoneda: ' + monedas + '\\nIdioma(s): ' + idiomas + '\\nSuperficie: ' + superficie + '\\nRegion: ' + region.trim().replace(/^,\\s*/, '');\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
+      },
+      "id": "cac187cd-c7fa-45ae-9d6f-97a4e63386c9",
+      "name": "Formatear Pais",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        2128
       ]
     },
     {
@@ -176,52 +203,52 @@
         },
         "options": {}
       },
-      "id": "2a6fcfc8-6cf0-4b44-a49d-27fdde9a113a",
+      "id": "0cc5e61a-cb85-4e6a-9437-a2595b1926a1",
       "name": "API Wikipedia",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1984,
-        1824
+        1472,
+        2368
       ]
     },
     {
       "parameters": {
         "jsCode": "const inputData = $('Parsear Intencion').item.json;\nconst wiki = $json;\n\nconst titulo = wiki.title || 'Sin titulo';\nconst resumen = wiki.extract || 'Sin informacion disponible';\nconst url = (wiki.content_urls && wiki.content_urls.desktop) ? wiki.content_urls.desktop.page : '';\nconst resumenCorto = resumen.length > 800 ? resumen.substring(0, 800) + '...' : resumen;\n\nconst contexto = 'Tema: ' + titulo + '\\nResumen: ' + resumenCorto + '\\nMas info: ' + url;\n\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: contexto\n  }\n}];"
       },
-      "id": "53bfea6e-75c5-4182-8c76-6eec1eedb403",
+      "id": "52546ddb-9cb3-471b-9f9a-1bcaf161812e",
       "name": "Formatear Wikipedia",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2192,
-        1840
+        1696,
+        2368
       ]
     },
     {
       "parameters": {
         "jsCode": "const inputData = $('Parsear Intencion').item.json;\nreturn [{\n  json: {\n    mensaje: inputData.mensaje,\n    session_id: inputData.session_id,\n    herramienta: inputData.herramienta,\n    contexto_api: ''\n  }\n}];"
       },
-      "id": "a6961acb-3a02-4ae0-8b95-d15d9cc14df9",
+      "id": "cf9de493-e2d9-4b91-ba06-19dee88b95e6",
       "name": "Sin Herramienta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1968,
-        2192
+        1472,
+        2608
       ]
     },
     {
       "parameters": {
         "jsCode": "const inputData = $('Validar Input').item.json;\nconst intencion = $('Parsear Intencion').item.json;\n\nconst agentOutput = $('Chain Generar Respuesta').item.json;\nlet respuesta = agentOutput.output || agentOutput.text || agentOutput.response || 'No se pudo generar respuesta.';\n\n// Eliminar el razonamiento interno del modelo (todo lo que va antes del contenido real)\n// El modelo suele terminar el razonamiento con ** o con un salto doble\nconst separadores = [\n  /\\*\\*Japón[\\s\\S]*/,        // Buscar inicio del contenido real con **\n  /\\n\\n([^*\\n].+[\\s\\S]*)/,  // Primer párrafo real tras línea en blanco\n];\n\nfor (const sep of separadores) {\n  const match = respuesta.match(sep);\n  if (match) {\n    respuesta = match[0].trim();\n    break;\n  }\n}\n\nreturn [{\n  json: {\n    ok: true,\n    session_id:        inputData.session_id,\n    mensaje_usuario:   inputData.mensaje,\n    respuesta:         respuesta.trim(),\n    herramienta_usada: intencion.herramienta || 'ninguna',\n    timestamp:         new Date().toISOString()\n  }\n}];"
       },
-      "id": "cddbf724-187b-440d-8445-b608a0cbdcf6",
+      "id": "606f9c2c-35cf-48c2-a6cd-870d58117c31",
       "name": "Construir Respuesta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3136,
-        1840
+        2640,
+        2256
       ]
     },
     {
@@ -232,13 +259,13 @@
           "responseCode": 200
         }
       },
-      "id": "03d6cf1b-1aea-47c9-ba23-c82a987c3c4d",
+      "id": "266f30c2-3b6a-4a43-a8d0-64527014ca27",
       "name": "Responder Cliente",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3408,
-        1840
+        2912,
+        2256
       ]
     },
     {
@@ -250,10 +277,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1216,
-        1696
+        720,
+        2112
       ],
-      "id": "4484c450-c796-42b9-b18e-8a21bdfdf8dc",
+      "id": "50b6d828-7ea6-45f4-bfa1-67cdbafbea03",
       "name": "AI Agent"
     },
     {
@@ -264,10 +291,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1216,
-        1920
+        720,
+        2336
       ],
-      "id": "478a6b5e-8232-4864-9a4c-f0a5e7fa87b3",
+      "id": "1c251e6b-1a1a-48c7-840e-fbbf52fd0aed",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -284,10 +311,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        2704,
-        2048
+        2208,
+        2464
       ],
-      "id": "b677ca3d-929b-4bc0-865d-933e6c8b6884",
+      "id": "e0db7eea-7260-43c0-87a5-fb6ef621ebab",
       "name": "Ollama Chat Model1",
       "credentials": {
         "ollamaApi": {
@@ -305,10 +332,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        2704,
-        1840
+        2208,
+        2256
       ],
-      "id": "7dbf6113-717f-4eea-a315-e629532843bf",
+      "id": "eb514565-3eea-446a-891a-446e359ff664",
       "name": "Chain Generar Respuesta"
     },
     {
@@ -319,34 +346,47 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1856,
-        1536
+        1360,
+        1952
       ],
-      "id": "b2118387-9477-436d-ae99-04a2f292779b",
+      "id": "a2126ca1-402d-423e-991b-b106f93bec68",
       "name": "HTTP Request"
     },
     {
       "parameters": {
         "jsCode": "const data = $json;\nconst inputData = $('Parsear Intencion').item.json;\n\nif (!data.results || data.results.length === 0) {\n  throw new Error('Ciudad no encontrada: ' + (inputData.parametros.ciudad || 'desconocida'));\n}\n\nconst loc = data.results[0];\n\nreturn [{\n  json: {\n    mensaje:     inputData.mensaje,\n    session_id:  inputData.session_id,\n    herramienta: inputData.herramienta,\n    parametros:  inputData.parametros,\n    geo: {\n      nombre: loc.name,\n      pais:   loc.country,\n      lat:    loc.latitude,\n      lon:    loc.longitude\n    }\n  }\n}];"
       },
-      "id": "e8b7270d-b0ea-40ca-8e5a-e2949d6b0302",
+      "id": "f149db24-53f1-4af6-975b-96b54f53c5d5",
       "name": "Extraer Coordenadas",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2048,
-        1488
+        1552,
+        1904
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $('Parsear Intencion').item.json;\nconst paisOriginal = (inputData.parametros.pais || '').toLowerCase().trim()\n  .normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\");\n\n// Diccionario español -> inglés para los países más comunes\nconst traduciones = {\n  'japon': 'japan','japón': 'japan', 'japonés': 'japan', 'japones': 'japan',\n  'españa': 'spain', 'espana': 'spain',\n  'francia': 'france',\n  'alemania': 'germany',\n  'italia': 'italy',\n  'china': 'china',\n  'rusia': 'russia',\n  'estados unidos': 'united states', 'eeuu': 'united states', 'usa': 'united states',\n  'reino unido': 'united kingdom',\n  'brasil': 'brazil',\n  'mexico': 'mexico', 'méxico': 'mexico',\n  'argentina': 'argentina',\n  'canada': 'canada', 'canadá': 'canada',\n  'australia': 'australia',\n  'india': 'india',\n  'portugal': 'portugal',\n  'paises bajos': 'netherlands', 'holanda': 'netherlands',\n  'belgica': 'belgium', 'bélgica': 'belgium',\n  'suiza': 'switzerland',\n  'suecia': 'sweden',\n  'noruega': 'norway',\n  'dinamarca': 'denmark',\n  'finlandia': 'finland',\n  'polonia': 'poland',\n  'turquia': 'turkey', 'turquía': 'turkey',\n  'grecia': 'greece',\n  'egipto': 'egypt',\n  'sudafrica': 'south africa', 'sudáfrica': 'south africa',\n  'nigeria': 'nigeria',\n  'marruecos': 'morocco',\n  'corea del sur': 'south korea',\n  'corea del norte': 'north korea',\n  'tailandia': 'thailand',\n  'vietnam': 'vietnam',\n  'indonesia': 'indonesia',\n  'filipinas': 'philippines',\n  'nueva zelanda': 'new zealand',\n  'arabia saudi': 'saudi arabia', 'arabia saudí': 'saudi arabia',\n  'emiratos arabes': 'united arab emirates',\n  'iran': 'iran', 'irak': 'iraq',\n  'israel': 'israel',\n  'colombia': 'colombia',\n  'peru': 'peru', 'perú': 'peru',\n  'chile': 'chile',\n  'venezuela': 'venezuela',\n  'cuba': 'cuba',\n  'ucrania': 'ukraine',\n  'rumania': 'romania', 'rumanía': 'romania',\n  'hungria': 'hungary', 'hungría': 'hungary',\n  'austria': 'austria',\n  'irlanda': 'ireland',\n  'escocia': 'scotland',\n  'croacia': 'croatia',\n  'serbia': 'serbia',\n  'eslovaquia': 'slovakia',\n  'eslovenia': 'slovenia'\n};\n\nconst paisEN = traduciones[paisOriginal] || paisOriginal;\n\nreturn [{\n  json: {\n    mensaje:     inputData.mensaje,\n    session_id:  inputData.session_id,\n    herramienta: inputData.herramienta,\n    parametros:  { pais: paisEN },\n    pais_original: paisOriginal\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        2128
+      ],
+      "id": "1892b6b5-039e-4697-b5e3-fca6487d78bc",
+      "name": "Normalizar Pais"
     },
     {
       "parameters": {},
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        1312,
-        1888
+        816,
+        2304
       ],
-      "id": "382ac139-f3f2-42ad-9518-6f581b45bdae",
+      "id": "73571726-0ba0-4ff7-b461-b9a6f3a456c9",
       "name": "Postgres Chat Memory",
       "credentials": {
         "postgres": {
@@ -400,7 +440,13 @@
             "index": 0
           }
         ],
-        [],
+        [
+          {
+            "node": "Normalizar Pais",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "API Wikipedia",
@@ -429,6 +475,28 @@
       ]
     },
     "Formatear Clima": {
+      "main": [
+        [
+          {
+            "node": "Chain Generar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API REST Countries": {
+      "main": [
+        [
+          {
+            "node": "Formatear Pais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Pais": {
       "main": [
         [
           {
@@ -549,6 +617,17 @@
         ]
       ]
     },
+    "Normalizar Pais": {
+      "main": [
+        [
+          {
+            "node": "API REST Countries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Postgres Chat Memory": {
       "ai_memory": [
         [
@@ -567,7 +646,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "c7adf262-a699-4361-b44b-52611c3cb9de",
+  "versionId": "8e3e5a72-fd93-4cbc-b330-8076b2743656",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa3ff3defc8e248c80522be26ae683572b687cfe70077dca88a8b7aae9143093"
